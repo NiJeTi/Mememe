@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mememe.Parser", "Mememe.Parser\Mememe.Parser.csproj", "{812C2E12-9C5A-4641-A915-AEB17C49479F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mememe.NineGag", "Mememe.NineGag\Mememe.NineGag.csproj", "{6136CBEE-84FD-4CDF-A9F2-C20693BA0196}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mememe.Service", "Mememe.Service\Mememe.Service.csproj", "{B311D717-5C82-469F-B086-DA92617CDCC0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{812C2E12-9C5A-4641-A915-AEB17C49479F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{812C2E12-9C5A-4641-A915-AEB17C49479F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{812C2E12-9C5A-4641-A915-AEB17C49479F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{812C2E12-9C5A-4641-A915-AEB17C49479F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6136CBEE-84FD-4CDF-A9F2-C20693BA0196}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6136CBEE-84FD-4CDF-A9F2-C20693BA0196}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6136CBEE-84FD-4CDF-A9F2-C20693BA0196}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6136CBEE-84FD-4CDF-A9F2-C20693BA0196}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B311D717-5C82-469F-B086-DA92617CDCC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B311D717-5C82-469F-B086-DA92617CDCC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B311D717-5C82-469F-B086-DA92617CDCC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B311D717-5C82-469F-B086-DA92617CDCC0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
