@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: "mongo"
+    container_name: "Mememe_Mongo"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongo:/data/db
+      - ./mongoSetup.js:/docker-entrypoint-initdb.d/mongoSetup.js
+    ports:
+      - 27017:27017
+
+volumes:
+  mongo:
