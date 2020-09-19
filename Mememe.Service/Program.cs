@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 using Mememe.Parser;
 using Mememe.Service.Configurations;
 using Mememe.Service.Database;
@@ -12,7 +14,7 @@ namespace Mememe.Service
     {
         private static void Main(string[] args)
         {
-            Host
+            var hostBuilder = Host
                .CreateDefaultBuilder(args)
                .ConfigureServices((hostContext, services) =>
                 {
@@ -39,12 +41,18 @@ namespace Mememe.Service
 
                         return mongoConfiguration;
                     });
-                    
+
                     services
                        .AddHostedService<ParserService>()
                        .AddSingleton<IMongo>(provider => new Mongo(provider));
-                })
-               .UseWindowsService()
+                });
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                hostBuilder = hostBuilder.UseSystemd();
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                hostBuilder = hostBuilder.UseWindowsService();
+
+            hostBuilder
                .Build()
                .Run();
         }
