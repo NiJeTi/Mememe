@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using System;
 
 using Mememe.Parser;
 using Mememe.Service.Configurations;
@@ -8,14 +8,31 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Serilog;
+
 namespace Mememe.Service
 {
     internal static class Program
     {
         private static void Main(string[] args)
         {
-            var hostBuilder = Host
-               .CreateDefaultBuilder(args)
+            try
+            {
+                CreateHost(args).Run();
+            }
+            catch (Exception exception)
+            {
+                Log.Fatal(exception, "Application terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+
+        private static IHost CreateHost(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+               .UseSerilog()
                .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton(_ =>
@@ -45,16 +62,8 @@ namespace Mememe.Service
                     services
                        .AddHostedService<ParserService>()
                        .AddSingleton<IMongo>(provider => new Mongo(provider));
-                });
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                hostBuilder = hostBuilder.UseSystemd();
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                hostBuilder = hostBuilder.UseWindowsService();
-
-            hostBuilder
-               .Build()
-               .Run();
-        }
+                })
+               .UseSystemd()
+               .Build();
     }
 }
