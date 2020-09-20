@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,15 +45,10 @@ namespace Mememe.Service
 
                 _lastRun = DateTime.Now;
 
-                var uploadTasks = new List<Task>(_applicationConfiguration.ContentAmount);
-
-                foreach (var article in Parse(_parsingConfiguration, _applicationConfiguration.ContentAmount))
-                {
-                    var uploadTask = Upload(article);
-                    uploadTask.Start();
-
-                    uploadTasks.Add(uploadTask);
-                }
+                var uploadTasks =
+                    Parse(_parsingConfiguration, _applicationConfiguration.ContentAmount)
+                       .Select(Upload)
+                       .ToArray();
 
                 Task.WaitAll(uploadTasks.ToArray());
 
