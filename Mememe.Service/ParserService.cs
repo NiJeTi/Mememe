@@ -10,14 +10,14 @@ using Mememe.Service.Configurations;
 using Mememe.Service.Database;
 
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+
+using Serilog;
 
 namespace Mememe.Service
 {
     public class ParserService : BackgroundService
     {
-        private int _articleCounter;
-        private readonly ILogger<ParserService> _logger;
+        private static int _parsedArticles;
 
         private readonly IMongo _mongo;
 
@@ -26,11 +26,9 @@ namespace Mememe.Service
 
         private DateTime _lastRun = DateTime.MinValue;
 
-        public ParserService(ILogger<ParserService> logger, IMongo mongo,
+        public ParserService(IMongo mongo,
             ApplicationConfiguration applicationConfiguration, WebDriver.Configuration parsingConfiguration)
         {
-            _logger = logger;
-
             _mongo = mongo;
 
             _applicationConfiguration = applicationConfiguration;
@@ -46,20 +44,31 @@ namespace Mememe.Service
 
                 _lastRun = DateTime.Now;
 
-                foreach (var article in Parse())
-                    await Upload(article);
+                var uploadTasks = new List<Task>(_applicationConfiguration.ContentAmount);
+
+                foreach (var article in Parse(_parsingConfiguration, _applicationConfiguration.ContentAmount))
+                {
+                    var uploadTask = Upload(article);
+                    uploadTask.Start();
+
+                    uploadTasks.Add(uploadTask);
+                }
+
+                Task.WaitAll(uploadTasks.ToArray());
+
+                Log.Information("Successfully completed parsing and uploading");
             }
         }
 
-        private IEnumerable<Article> Parse()
+        private static IEnumerable<Article> Parse(WebDriver.Configuration parsingConfiguration, int contentAmount)
         {
-            WebDriver.Initialize(_parsingConfiguration);
-            _logger.LogInformation("Initialized web-driver");
+            WebDriver.Initialize(parsingConfiguration);
+            Log.Debug("Initialized web-driver");
 
-            for (var i = 0; i < _applicationConfiguration.ContentAmount; i++)
+            for (var i = 0; i < contentAmount; i++)
             {
-                _logger.LogDebug($"Begin parsing article {++_articleCounter}");
-                
+                Log.Debug($"Began parsing article {++_parsedArticles}");
+
                 string title = MainPageScenarios.GetTitle(i);
 
                 var article = new Article(title)
@@ -67,23 +76,23 @@ namespace Mememe.Service
                     Image = MainPageScenarios.GetImage(i),
                     Video = MainPageScenarios.GetVideo(i)
                 };
-                
-                _logger.LogInformation($"Parsed article {_articleCounter} ({title})");
+
+                Log.Debug($"Parsed article {_parsedArticles} ({title})");
 
                 yield return article;
             }
 
             WebDriver.Dispose();
-            _logger.LogInformation("Disposed web-driver");
+            Log.Debug("Disposed web-driver");
         }
 
         private async Task Upload(Article article)
         {
-            _logger.LogDebug($"Begin uploading \"{article.Title}\" article");
-            
+            Log.Debug($"Began uploading \"{article.Title}\" article");
+
             await _mongo.UploadArticle(article);
-            
-            _logger.LogInformation($"Uploaded \"{article.Title}\" article");
+
+            Log.Debug($"Uploaded \"{article.Title}\" article");
         }
     }
 }
