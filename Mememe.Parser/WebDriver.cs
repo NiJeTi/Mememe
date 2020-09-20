@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 
 using Mememe.Parser.Exceptions;
@@ -40,7 +41,7 @@ namespace Mememe.Parser
             if (configuration.SilentMode)
                 chromeOptions.AddArgument("--headless");
 
-            Driver = new ChromeDriver(configuration.ChromeDriverLocation, chromeOptions) { Url = _configuration.Url };
+            Driver = new ChromeDriver(Directory.GetCurrentDirectory(), chromeOptions) { Url = _configuration.Url };
 
             new WebDriverWait(Driver, configuration.PageLoadTimeout)
                .Until(driver => ((IJavaScriptExecutor) driver)
@@ -116,9 +117,6 @@ namespace Mememe.Parser
 
         public class Configuration
         {
-            public string ChromeDriverLocation { get; set; } =
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
             public bool SilentMode { get; set; } = false;
 
             public string Url { get; set; } = "localhost";
