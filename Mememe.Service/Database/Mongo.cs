@@ -16,7 +16,7 @@ namespace Mememe.Service.Database
     {
         private readonly IMongoDatabase _database;
 
-        private IMongoCollection<Article> _currentCollection;
+        private IMongoCollection<Article>? _currentCollection;
         private DateTime _currentCollectionDate;
 
         public Mongo(IServiceProvider serviceProvider)
@@ -34,7 +34,7 @@ namespace Mememe.Service.Database
         {
             get
             {
-                if (_currentCollectionDate == DateTime.Today)
+                if (_currentCollectionDate == DateTime.Today && _currentCollection != null)
                     return _currentCollection;
                 
                 var currentCollectionName = DateTime.Today.ToString("s");
