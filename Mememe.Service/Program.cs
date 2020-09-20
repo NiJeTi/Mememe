@@ -32,7 +32,13 @@ namespace Mememe.Service
 
         private static IHost CreateHost(string[] args) =>
             Host.CreateDefaultBuilder(args)
-               .UseSerilog()
+               .UseSerilog((context, _) =>
+                {
+                    Log.Logger = new LoggerConfiguration()
+                       .ReadFrom.Configuration(context.Configuration)
+                       .CreateLogger();
+                }, true)
+               .UseSystemd()
                .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton(_ =>
@@ -63,7 +69,6 @@ namespace Mememe.Service
                        .AddHostedService<ParserService>()
                        .AddSingleton<IMongo>(provider => new Mongo(provider));
                 })
-               .UseSystemd()
                .Build();
     }
 }
