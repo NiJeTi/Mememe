@@ -3,6 +3,7 @@ using System;
 using Mememe.Parser;
 using Mememe.Service.Configurations;
 using Mememe.Service.Database;
+using Mememe.Service.Services;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

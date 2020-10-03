@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,18 +13,18 @@ using Microsoft.Extensions.Hosting;
 
 using Serilog;
 
-namespace Mememe.Service
+using Timer = System.Timers.Timer;
+
+namespace Mememe.Service.Services
 {
     public class ParserService : BackgroundService
     {
-        private static int _parsedArticles;
-
         private readonly IMongo _mongo;
 
         private readonly ApplicationConfiguration _applicationConfiguration;
         private readonly WebDriver.Configuration _parsingConfiguration;
 
-        private DateTime _lastRun = DateTime.MinValue;
+        private readonly Timer _triggerTimer;
 
         public ParserService(IMongo mongo,
             ApplicationConfiguration applicationConfiguration, WebDriver.Configuration parsingConfiguration)
@@ -34,36 +33,47 @@ namespace Mememe.Service
 
             _applicationConfiguration = applicationConfiguration;
             _parsingConfiguration = parsingConfiguration;
+
+            _triggerTimer = new Timer(applicationConfiguration.RepeatEvery.TotalMilliseconds);
+            _triggerTimer.Elapsed += (_, __) => Trigger();
         }
 
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (DateTime.Now <= _lastRun + _applicationConfiguration.RepeatEvery)
-                    continue;
+            _triggerTimer.Start();
+            Trigger();
 
-                _lastRun = DateTime.Now;
-
-                var uploadTasks =
-                    Parse(_parsingConfiguration, _applicationConfiguration.ContentAmount)
-                       .Select(Upload)
-                       .ToArray();
-
-                Task.WaitAll(uploadTasks.ToArray());
-
-                Log.Information("Successfully completed parsing and uploading");
-            }
+            await Task.Yield();
         }
 
-        private static IEnumerable<Article> Parse(WebDriver.Configuration parsingConfiguration, int contentAmount)
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            WebDriver.Initialize(parsingConfiguration);
+            _triggerTimer.Stop();
+            _triggerTimer.Dispose();
+
+            await Task.Yield();
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken) => await Task.Yield();
+
+        private void Trigger()
+        {
+            Log.Information("Triggered parsing");
+
+            var uploadTasks = Parse().Select(Upload).ToArray();
+            Task.WaitAll(uploadTasks);
+
+            Log.Information($"Successfully parsed and uploaded {_applicationConfiguration.ContentAmount} articles");
+        }
+
+        private IEnumerable<Article> Parse()
+        {
+            WebDriver.Initialize(_parsingConfiguration);
             Log.Debug("Initialized web-driver");
 
-            for (var i = 0; i < contentAmount; i++)
+            for (var i = 0; i < _applicationConfiguration.ContentAmount; i++)
             {
-                Log.Debug($"Began parsing article {++_parsedArticles}");
+                Log.Debug($"Began parsing article {i + 1}");
 
                 string title = MainPageScenarios.GetTitle(i);
 
@@ -73,7 +83,7 @@ namespace Mememe.Service
                     Video = MainPageScenarios.GetVideo(i)
                 };
 
-                Log.Debug($"Parsed article {_parsedArticles} ({title})");
+                Log.Debug($"Parsed article {i + 1} (\"{title}\")");
 
                 yield return article;
             }
