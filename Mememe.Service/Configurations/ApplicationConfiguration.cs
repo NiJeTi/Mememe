@@ -2,6 +2,7 @@
 
 namespace Mememe.Service.Configurations
 {
+    [Serializable]
     public class ApplicationConfiguration
     {
         public int ContentAmount { get; set; } = 1;

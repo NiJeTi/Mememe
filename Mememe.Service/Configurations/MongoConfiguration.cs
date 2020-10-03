@@ -1,5 +1,8 @@
-﻿namespace Mememe.Service.Configurations
+﻿using System;
+
+namespace Mememe.Service.Configurations
 {
+    [Serializable]
     public class MongoConfiguration
     {
         public string Host { get; set; } = "localhost";
