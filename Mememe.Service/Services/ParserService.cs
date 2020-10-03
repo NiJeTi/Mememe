@@ -49,9 +49,15 @@ namespace Mememe.Service.Services
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _triggerTimer.Stop();
-            _triggerTimer.Dispose();
 
             await Task.Yield();
+        }
+        
+        public override void Dispose()
+        {
+            _triggerTimer.Dispose();
+            
+            base.Dispose();
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken) => await Task.Yield();
