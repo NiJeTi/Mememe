@@ -8,8 +8,6 @@ namespace Mememe.NineGag.Scenarios.MainPage
     {
         private static readonly MainPageControls Controls = ControlsRepository.MainPageControls;
 
-        public static int GetArticlesCount() => WebDriver.GetElementCount(Controls.ArticleForm);
-
         public static string GetTitle(int articleIndex)
         {
             var article = Controls.GetArticleByIndex(articleIndex);
