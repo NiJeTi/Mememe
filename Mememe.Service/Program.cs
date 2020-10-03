@@ -39,7 +39,7 @@ namespace Mememe.Service
                        .ReadFrom.Configuration(context.Configuration)
                        .CreateLogger();
                 }, true)
-               .UseSystemd()
+               .UseWindowsService()
                .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton(_ =>
