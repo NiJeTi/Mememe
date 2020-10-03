@@ -22,7 +22,8 @@ namespace Mememe.NineGag.Controls.MainPage
 
         public Control GetArticleImage(Control article) => new Control("img", parent: GetArticleContentForm(article));
 
-        public Control GetArticleVideo(Control article) => new Control("video source[type=\"video/mp4\"]", parent: GetArticleContentForm(article));
+        public Control GetArticleVideo(Control article) =>
+            new Control("video source[type=\"video/mp4\"]", parent: GetArticleContentForm(article));
 
         private Control GetArticleContentForm(Control article) => new Control(".post-container", parent: article);
     }

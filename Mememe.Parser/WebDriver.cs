@@ -28,6 +28,20 @@ namespace Mememe.Parser
             private set => _driver = value;
         }
 
+        [Serializable]
+        public class Configuration
+        {
+            public string? ChromeDriverPath { get; set; }
+            public string LogPath { get; set; } = "Logs/chromedriver.log";
+
+            public bool SilentMode { get; set; } = false;
+
+            public string Url { get; set; } = "localhost";
+
+            public TimeSpan PageLoadTimeout { get; set; } = TimeSpan.FromSeconds(10);
+            public TimeSpan ControlWaitTimeout { get; set; } = TimeSpan.FromSeconds(5);
+        }
+
         #region Management
 
         public static void Initialize(Configuration configuration)
@@ -37,7 +51,7 @@ namespace Mememe.Parser
             string driverPath = string.IsNullOrEmpty(configuration.ChromeDriverPath)
                 ? Directory.GetCurrentDirectory()
                 : configuration.ChromeDriverPath;
-            
+
             var service = ChromeDriverService.CreateDefaultService(driverPath);
             service.LogPath = configuration.LogPath;
 
@@ -45,7 +59,7 @@ namespace Mememe.Parser
             options.AddArgument("-–incognito");
             options.AddArgument("--start-fullscreen");
             options.SetLoggingPreference(LogType.Browser, LogLevel.Debug);
-            
+
             if (configuration.SilentMode)
                 options.AddArgument("--headless");
 
@@ -122,19 +136,5 @@ namespace Mememe.Parser
             );
 
         #endregion
-
-        [Serializable]
-        public class Configuration
-        {
-            public string? ChromeDriverPath { get; set; }
-            public string LogPath { get; set; } = "Logs/chromedriver.log";
-
-            public bool SilentMode { get; set; } = false;
-
-            public string Url { get; set; } = "localhost";
-
-            public TimeSpan PageLoadTimeout { get; set; } = TimeSpan.FromSeconds(10);
-            public TimeSpan ControlWaitTimeout { get; set; } = TimeSpan.FromSeconds(5);
-        }
     }
 }

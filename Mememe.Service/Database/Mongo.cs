@@ -24,9 +24,9 @@ namespace Mememe.Service.Database
             var mongoConfig = serviceProvider.GetService<MongoConfiguration>();
 
             string connectionString = BuildConnectionString(mongoConfig);
-            
+
             var client = new MongoClient(connectionString);
-            
+
             _database = client.GetDatabase(mongoConfig.Database);
         }
 
@@ -36,11 +36,11 @@ namespace Mememe.Service.Database
             {
                 if (_currentCollectionDate == DateTime.Today && _currentCollection != null)
                     return _currentCollection;
-                
+
                 var currentCollectionName = DateTime.Today.ToString("s");
 
                 IMongoCollection<Article> currentCollection;
-            
+
                 if (IsCollectionExists(currentCollectionName, _database.ListCollectionNames()))
                 {
                     currentCollection = _database.GetCollection<Article>(currentCollectionName);
@@ -74,7 +74,7 @@ namespace Mememe.Service.Database
 
             return false;
         }
-        
+
         private static string BuildConnectionString(MongoConfiguration configuration)
         {
             var builder = new StringBuilder("mongodb://");

@@ -52,11 +52,11 @@ namespace Mememe.Service.Services
 
             await Task.Yield();
         }
-        
+
         public override void Dispose()
         {
             _triggerTimer.Dispose();
-            
+
             base.Dispose();
         }
 
