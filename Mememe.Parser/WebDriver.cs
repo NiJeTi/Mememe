@@ -34,14 +34,22 @@ namespace Mememe.Parser
         {
             _configuration = configuration;
 
-            var chromeOptions = new ChromeOptions();
-            chromeOptions.AddArgument("-–incognito");
-            chromeOptions.AddArgument("--start-fullscreen");
+            string driverPath = string.IsNullOrEmpty(configuration.ChromeDriverPath)
+                ? Directory.GetCurrentDirectory()
+                : configuration.ChromeDriverPath;
+            
+            var service = ChromeDriverService.CreateDefaultService(driverPath);
+            service.LogPath = configuration.LogPath;
 
+            var options = new ChromeOptions();
+            options.AddArgument("-–incognito");
+            options.AddArgument("--start-fullscreen");
+            options.SetLoggingPreference(LogType.Browser, LogLevel.Debug);
+            
             if (configuration.SilentMode)
-                chromeOptions.AddArgument("--headless");
+                options.AddArgument("--headless");
 
-            Driver = new ChromeDriver(Directory.GetCurrentDirectory(), chromeOptions) { Url = _configuration.Url };
+            Driver = new ChromeDriver(service, options) { Url = _configuration.Url };
 
             new WebDriverWait(Driver, configuration.PageLoadTimeout)
                .Until(driver => ((IJavaScriptExecutor) driver)
@@ -102,7 +110,7 @@ namespace Mememe.Parser
                     try
                     {
                         ((IJavaScriptExecutor) Driver)
-                           .ExecuteScript("arguments[0].scrollIntoView(false)", control.Element);
+                           .ExecuteScript("arguments[0].scrollIntoView(true)", control.Element);
 
                         return true;
                     }
@@ -115,8 +123,12 @@ namespace Mememe.Parser
 
         #endregion
 
+        [Serializable]
         public class Configuration
         {
+            public string? ChromeDriverPath { get; set; }
+            public string LogPath { get; set; } = "Logs/chromedriver.log";
+
             public bool SilentMode { get; set; } = false;
 
             public string Url { get; set; } = "localhost";
