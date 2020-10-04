@@ -64,7 +64,7 @@ namespace Mememe.Service.Services
 
         private void Trigger()
         {
-            Log.Information("Triggered parsing");
+            Log.Information($"Triggered parsing of {_applicationConfiguration.ContentAmount}");
 
             var uploadTasks = Parse().Select(Upload).ToArray();
             Task.WaitAll(uploadTasks);
