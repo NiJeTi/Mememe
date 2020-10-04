@@ -59,7 +59,7 @@ namespace Mememe.Service.Services
         {
             _triggerTimer.Dispose();
 
-            if (WebDriver.State != WebDriverState.Disposed)
+            if (WebDriver.IsReady)
                 WebDriver.Dispose();
 
             base.Dispose();
@@ -88,7 +88,7 @@ namespace Mememe.Service.Services
 
         private IEnumerable<Article?> Parse()
         {
-            if (WebDriver.State != WebDriverState.Ready)
+            if (!WebDriver.IsReady)
             {
                 WebDriver.Initialize(_parsingConfiguration);
                 Log.Debug("Initialized web-driver");
@@ -125,7 +125,7 @@ namespace Mememe.Service.Services
                 yield return article;
             }
 
-            if (WebDriver.State is WebDriverState.Ready)
+            if (WebDriver.IsReady)
             {
                 WebDriver.Dispose();
                 Log.Debug("Disposed web-driver");

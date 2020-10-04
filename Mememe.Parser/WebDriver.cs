@@ -28,7 +28,7 @@ namespace Mememe.Parser
             private set => _driver = value;
         }
 
-        public static WebDriverState State { get; private set; } = WebDriverState.Uninitialized;
+        public static bool IsReady { get; private set; } = false;
 
         [Serializable]
         public class Configuration
@@ -66,7 +66,7 @@ namespace Mememe.Parser
                 options.AddArgument("--headless");
 
             Driver = new ChromeDriver(service, options) { Url = _configuration.Url };
-            State = WebDriverState.Ready;
+            IsReady = true;
 
             new WebDriverWait(Driver, configuration.PageLoadTimeout)
                .Until(driver => ((IJavaScriptExecutor) driver)
@@ -79,7 +79,7 @@ namespace Mememe.Parser
             Driver.Close();
             Driver.Dispose();
 
-            State = WebDriverState.Disposed;
+            IsReady = false;
         }
 
         #endregion
