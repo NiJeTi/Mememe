@@ -66,12 +66,21 @@ namespace Mememe.Service.Services
 
         private void Trigger()
         {
-            Log.Information($"Triggered parsing of {_applicationConfiguration.ContentAmount} article(s)");
+            int contentAmount = _applicationConfiguration.ContentAmount;
+            
+            Log.Information($"Triggered parsing of {contentAmount} articles");
 
             var uploadTasks = Parse().Where(a => a != null).Select(Upload!).ToArray();
             Task.WaitAll(uploadTasks);
 
-            Log.Information($"Successfully parsed and uploaded {_applicationConfiguration.ContentAmount} articles");
+            int parsedContentAmount = uploadTasks.Length;
+
+            if (parsedContentAmount > contentAmount / 2)
+                Log.Information($"{parsedContentAmount} articles were parsed and uploaded");
+            else if (parsedContentAmount <= contentAmount / 2)
+                Log.Warning($"Only {parsedContentAmount} articles were parsed and uploaded");
+            else if (parsedContentAmount == 0)
+                Log.Error("No articles were parsed and uploaded");
         }
 
         private IEnumerable<Article?> Parse()
@@ -99,9 +108,9 @@ namespace Mememe.Service.Services
                 }
                 catch (ControlDoesntExistException exception)
                 {
-                    var logBuilder = new StringBuilder($"Error while parsing article {i + 1}");
+                    var logBuilder = new StringBuilder();
 
-                    logBuilder.AppendLine(exception.Message)
+                    logBuilder.AppendLine($"Error while parsing article {i + 1}")
                        .Append(exception);
 
                     Log.Warning(logBuilder.ToString());
