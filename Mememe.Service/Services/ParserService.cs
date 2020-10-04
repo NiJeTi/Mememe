@@ -59,6 +59,9 @@ namespace Mememe.Service.Services
         {
             _triggerTimer.Dispose();
 
+            if (WebDriver.State != WebDriverState.Disposed)
+                WebDriver.Dispose();
+
             base.Dispose();
         }
 
@@ -67,7 +70,7 @@ namespace Mememe.Service.Services
         private void Trigger()
         {
             int contentAmount = _applicationConfiguration.ContentAmount;
-            
+
             Log.Information($"Triggered parsing of {contentAmount} articles");
 
             var uploadTasks = Parse().Where(a => a != null).Select(Upload!).ToArray();
@@ -85,8 +88,11 @@ namespace Mememe.Service.Services
 
         private IEnumerable<Article?> Parse()
         {
-            WebDriver.Initialize(_parsingConfiguration);
-            Log.Debug("Initialized web-driver");
+            if (WebDriver.State != WebDriverState.Ready)
+            {
+                WebDriver.Initialize(_parsingConfiguration);
+                Log.Debug("Initialized web-driver");
+            }
 
             for (var i = 0; i < _applicationConfiguration.ContentAmount; i++)
             {
@@ -119,8 +125,11 @@ namespace Mememe.Service.Services
                 yield return article;
             }
 
-            WebDriver.Dispose();
-            Log.Debug("Disposed web-driver");
+            if (WebDriver.State is WebDriverState.Ready)
+            {
+                WebDriver.Dispose();
+                Log.Debug("Disposed web-driver");
+            }
         }
 
         private async Task Upload(Article article)
