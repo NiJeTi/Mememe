@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Mememe.NineGag.Models;
 using Mememe.NineGag.Scenarios.MainPage;
 using Mememe.Parser;
+using Mememe.Parser.Exceptions;
 using Mememe.Service.Configurations;
 using Mememe.Service.Database;
 
@@ -64,15 +66,15 @@ namespace Mememe.Service.Services
 
         private void Trigger()
         {
-            Log.Information($"Triggered parsing of {_applicationConfiguration.ContentAmount}");
+            Log.Information($"Triggered parsing of {_applicationConfiguration.ContentAmount} article(s)");
 
-            var uploadTasks = Parse().Select(Upload).ToArray();
+            var uploadTasks = Parse().Where(a => a != null).Select(Upload!).ToArray();
             Task.WaitAll(uploadTasks);
 
             Log.Information($"Successfully parsed and uploaded {_applicationConfiguration.ContentAmount} articles");
         }
 
-        private IEnumerable<Article> Parse()
+        private IEnumerable<Article?> Parse()
         {
             WebDriver.Initialize(_parsingConfiguration);
             Log.Debug("Initialized web-driver");
@@ -81,15 +83,29 @@ namespace Mememe.Service.Services
             {
                 Log.Debug($"Began parsing article {i + 1}");
 
-                string title = MainPageScenarios.GetTitle(i);
+                Article? article = null;
 
-                var article = new Article(title)
+                try
                 {
-                    Image = MainPageScenarios.GetImage(i),
-                    Video = MainPageScenarios.GetVideo(i)
-                };
+                    string title = MainPageScenarios.GetTitle(i);
 
-                Log.Debug($"Parsed article {i + 1} (\"{title}\")");
+                    article = new Article(title)
+                    {
+                        Image = MainPageScenarios.GetImage(i),
+                        Video = MainPageScenarios.GetVideo(i)
+                    };
+
+                    Log.Debug($"Parsed article {i + 1} (\"{title}\")");
+                }
+                catch (ControlDoesntExistException exception)
+                {
+                    var logBuilder = new StringBuilder($"Error while parsing article {i + 1}");
+
+                    logBuilder.AppendLine(exception.Message)
+                       .Append(exception);
+
+                    Log.Warning(logBuilder.ToString());
+                }
 
                 yield return article;
             }
