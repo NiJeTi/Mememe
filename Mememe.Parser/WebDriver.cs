@@ -74,6 +74,7 @@ namespace Mememe.Parser
         public static void Dispose()
         {
             Driver.Close();
+            Driver.Dispose();
         }
 
         #endregion
