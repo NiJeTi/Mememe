@@ -34,6 +34,8 @@ namespace Mememe.Parser
         public class Configuration
         {
             public string? ChromeDriverPath { get; set; }
+            public string? ChromeUserAgent { get; set; }
+            
             public string LogPath { get; set; } = "Logs/chromedriver.log";
 
             public bool SilentMode { get; set; } = false;
@@ -62,6 +64,9 @@ namespace Mememe.Parser
             options.AddArgument("--start-fullscreen");
             options.SetLoggingPreference(LogType.Browser, LogLevel.Debug);
 
+            if (!string.IsNullOrEmpty(configuration.ChromeUserAgent))
+                options.AddArgument($"--user-agent={configuration.ChromeUserAgent}");
+            
             if (configuration.SilentMode)
                 options.AddArgument("--headless");
 
