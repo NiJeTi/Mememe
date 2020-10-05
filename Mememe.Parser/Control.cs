@@ -35,7 +35,7 @@ namespace Mememe.Parser
         internal IWebElement Element => Elements.First();
 
         internal IReadOnlyCollection<IWebElement> Elements =>
-            Parent == null
+            Parent is null
                 ? WebDriver.Driver.FindElements(_selectorParser(Selector))
                 : Parent.Element.FindElements(_selectorParser(Selector));
 
