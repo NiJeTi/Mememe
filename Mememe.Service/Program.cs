@@ -1,6 +1,6 @@
 using System;
 
-using Mememe.Parser;
+using Mememe.Parser.Configurations;
 using Mememe.Service.Configurations;
 using Mememe.Service.Database;
 using Mememe.Service.Services;
@@ -44,8 +44,8 @@ namespace Mememe.Service
                 {
                     services.AddSingleton(_ =>
                     {
-                        var parsingConfiguration = new WebDriver.Configuration();
-                        hostContext.Configuration.Bind("Parsing", parsingConfiguration);
+                        var parsingConfiguration = new WebDriverConfiguration();
+                        hostContext.Configuration.Bind("Parser", parsingConfiguration);
 
                         return parsingConfiguration;
                     });
@@ -68,7 +68,7 @@ namespace Mememe.Service
 
                     services
                        .AddHostedService<ParserService>()
-                       .AddSingleton<IMongo>(provider => new Mongo(provider));
+                       .AddSingleton<IDatabase>(provider => new Mongo(provider.GetService<MongoConfiguration>()));
                 })
                .Build();
     }
