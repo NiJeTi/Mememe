@@ -1,90 +1,105 @@
-﻿using System;
-using System.IO;
-using System.Threading;
+﻿using System.IO;
 
+using Mememe.Parser.Configurations;
 using Mememe.Parser.Exceptions;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.UI;
 
 namespace Mememe.Parser
 {
     public static class WebDriver
     {
-        private static Configuration _configuration = new Configuration();
+        private static WebDriverConfiguration? _configuration;
+
         private static IWebDriver? _driver;
+        private static IJavaScriptExecutor? _javaScriptExecutor;
 
         internal static IWebDriver Driver
         {
             get
             {
-                if (_driver == null)
+                if (_driver is null)
                     throw new WebDriverUninitializedException();
 
                 return _driver;
             }
-
             private set => _driver = value;
         }
 
-        public static bool IsReady { get; private set; } = false;
-
-        [Serializable]
-        public class Configuration
+        internal static IJavaScriptExecutor JavaScriptExecutor
         {
-            public string? ChromeDriverPath { get; set; }
-            public string? ChromeUserAgent { get; set; }
-            
-            public string LogPath { get; set; } = "Logs/chromedriver.log";
+            get
+            {
+                if (_javaScriptExecutor is null)
+                    throw new WebDriverUninitializedException();
 
-            public bool SilentMode { get; set; } = false;
+                return _javaScriptExecutor;
+            }
+            private set => _javaScriptExecutor = value;
+        }
 
-            public string Url { get; set; } = "localhost";
+        private static WebDriverConfiguration Configuration
+        {
+            get
+            {
+                if (_configuration is null)
+                    throw new WebDriverUninitializedException();
 
-            public TimeSpan PageLoadTimeout { get; set; } = TimeSpan.FromSeconds(10);
-            public TimeSpan ControlWaitTimeout { get; set; } = TimeSpan.FromSeconds(5);
+                return _configuration;
+            }
+            set => _configuration = value;
         }
 
         #region Management
 
-        public static void Initialize(Configuration configuration)
+        public static void Start(WebDriverConfiguration configuration)
         {
-            _configuration = configuration;
+            Configuration = configuration;
 
-            string driverPath = string.IsNullOrEmpty(configuration.ChromeDriverPath)
-                ? Directory.GetCurrentDirectory()
-                : configuration.ChromeDriverPath;
+            var service = InitializeDriverService(configuration);
+            var options = InitializeDriverOptions(configuration);
 
-            var service = ChromeDriverService.CreateDefaultService(driverPath);
+            Driver = new ChromeDriver(service, options);
+            JavaScriptExecutor = (IJavaScriptExecutor) Driver;
+
+            var timeouts = Driver.Manage().Timeouts();
+            timeouts.PageLoad = Configuration.PageLoadTimeout;
+            timeouts.ImplicitWait = Configuration.ControlWaitTimeout;
+
+            Driver.Url = configuration.Url;
+        }
+
+        public static void Stop()
+        {
+            Driver.Quit();
+            Driver.Dispose();
+        }
+
+        private static ChromeDriverService InitializeDriverService(WebDriverConfiguration configuration)
+        {
+            configuration.ChromeDriverPath ??= Directory.GetCurrentDirectory();
+
+            var service = ChromeDriverService.CreateDefaultService(configuration.ChromeDriverPath);
             service.LogPath = configuration.LogPath;
 
+            return service;
+        }
+
+        private static ChromeOptions InitializeDriverOptions(WebDriverConfiguration configuration)
+        {
             var options = new ChromeOptions();
             options.AddArgument("-–incognito");
             options.AddArgument("--start-fullscreen");
-            options.SetLoggingPreference(LogType.Browser, LogLevel.Debug);
+            options.SetLoggingPreference(LogType.Driver, configuration.LogLevel);
 
-            if (!string.IsNullOrEmpty(configuration.ChromeUserAgent))
+            if (configuration.ChromeUserAgent != null)
                 options.AddArgument($"--user-agent={configuration.ChromeUserAgent}");
-            
+
             if (configuration.SilentMode)
                 options.AddArgument("--headless");
 
-            Driver = new ChromeDriver(service, options) { Url = _configuration.Url };
-            IsReady = true;
-
-            new WebDriverWait(Driver, configuration.PageLoadTimeout)
-               .Until(driver => ((IJavaScriptExecutor) driver)
-                   .ExecuteScript("return document.readyState")
-                   .Equals("complete"));
-        }
-
-        public static void Dispose()
-        {
-            Driver.Close();
-            Driver.Dispose();
-
-            IsReady = false;
+            return options;
         }
 
         #endregion
@@ -129,22 +144,19 @@ namespace Mememe.Parser
 
         public static int GetElementCount(Control control) => control.Elements.Count;
 
-        public static bool IsExists(Control control) =>
-            SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        ((IJavaScriptExecutor) Driver)
-                           .ExecuteScript("arguments[0].scrollIntoView(true)", control.Element);
+        public static bool IsExists(Control control)
+        {
+            try
+            {
+                JavaScriptExecutor.ExecuteScript("arguments[0].scrollIntoView(false)", control.Element);
 
-                        return true;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, _configuration.ControlWaitTimeout
-            );
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         #endregion
     }
