@@ -1,78 +1,65 @@
-﻿using System;
-using System.Linq;
+﻿using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 using Mememe.NineGag.Models;
 using Mememe.Service.Configurations;
+using Mememe.Service.Models;
 
-using Microsoft.Extensions.DependencyInjection;
-
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
+
+using Serilog;
 
 namespace Mememe.Service.Database
 {
-    public class Mongo : IMongo
+    public class Mongo : IDatabase
     {
-        private readonly IMongoDatabase _database;
+        private readonly IMongoCollection<StoredArticle> _articlesCollection;
+        private readonly GridFSBucket _images;
+        private readonly GridFSBucket _videos;
 
-        private IMongoCollection<Article>? _currentCollection;
-        private DateTime _currentCollectionDate;
-
-        public Mongo(IServiceProvider serviceProvider)
+        public Mongo(MongoConfiguration configuration)
         {
-            var mongoConfig = serviceProvider.GetService<MongoConfiguration>();
-
-            string connectionString = BuildConnectionString(mongoConfig);
+            string connectionString = BuildConnectionString(configuration);
 
             var client = new MongoClient(connectionString);
+            var database = client.GetDatabase(configuration.Database);
 
-            _database = client.GetDatabase(mongoConfig.Database);
+            database.CreateCollection("articles");
+            _articlesCollection = database.GetCollection<StoredArticle>("articles");
+
+            var imagesOptions = new GridFSBucketOptions { BucketName = "images" };
+            var videosOptions = new GridFSBucketOptions { BucketName = "videos" };
+
+            _images = new GridFSBucket(database, imagesOptions);
+            _videos = new GridFSBucket(database, videosOptions);
         }
 
-        private IMongoCollection<Article> CurrentCollection
+        public async Task<bool> UploadArticle(Article article)
         {
-            get
+            ObjectId contentId;
+
+            if (article.Image != null)
             {
-                if (_currentCollectionDate == DateTime.Today && _currentCollection != null)
-                    return _currentCollection;
-
-                var currentCollectionName = DateTime.Today.ToString("s");
-
-                IMongoCollection<Article> currentCollection;
-
-                if (IsCollectionExists(currentCollectionName, _database.ListCollectionNames()))
-                {
-                    currentCollection = _database.GetCollection<Article>(currentCollectionName);
-                }
-                else
-                {
-                    _database.CreateCollection(currentCollectionName);
-
-                    currentCollection = _database.GetCollection<Article>(currentCollectionName);
-                }
-
-                _currentCollectionDate = DateTime.Today;
-                _currentCollection = currentCollection;
-
-                return currentCollection;
+                contentId = await UploadImage(article.Title, article.Image);
             }
-        }
+            else if (article.Video != null)
+            {
+                contentId = await UploadVideo(article.Title, article.Video);
+            }
+            else
+            {
+                Log.Warning($"No content in parsed article \"{article}\"");
 
-        public async Task UploadArticle(Article article)
-        {
-            var collection = CurrentCollection;
+                return false;
+            }
 
-            await collection.InsertOneAsync(article);
-        }
+            var databaseArticle = new StoredArticle(article.Title) { ContentId = contentId };
+            await _articlesCollection.InsertOneAsync(databaseArticle);
 
-        private static bool IsCollectionExists(string collectionName, IAsyncCursor<string> collectionList)
-        {
-            while (collectionList.MoveNext())
-                if (collectionList.Current.Contains(collectionName))
-                    return true;
-
-            return false;
+            return true;
         }
 
         private static string BuildConnectionString(MongoConfiguration configuration)
@@ -93,6 +80,22 @@ namespace Mememe.Service.Database
                .Append(configuration.AuthMechanism);
 
             return builder.ToString();
+        }
+
+        private async Task<ObjectId> UploadImage(string title, string link)
+        {
+            using var downloadClient = new WebClient();
+            await using var downloadStream = await downloadClient.OpenReadTaskAsync(link);
+
+            return await _images.UploadFromStreamAsync(title, downloadStream);
+        }
+
+        private async Task<ObjectId> UploadVideo(string title, string link)
+        {
+            using var downloadClient = new WebClient();
+            await using var downloadStream = await downloadClient.OpenReadTaskAsync(link);
+
+            return await _videos.UploadFromStreamAsync(title, downloadStream);
         }
     }
 }

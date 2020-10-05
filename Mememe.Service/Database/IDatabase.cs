@@ -4,8 +4,8 @@ using Mememe.NineGag.Models;
 
 namespace Mememe.Service.Database
 {
-    public interface IMongo
+    public interface IDatabase
     {
-        Task UploadArticle(Article article);
+        Task<bool> UploadArticle(Article article);
     }
 }
