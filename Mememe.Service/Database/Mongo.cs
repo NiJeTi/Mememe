@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +17,12 @@ namespace Mememe.Service.Database
 {
     public class Mongo : IDatabase
     {
+        private const string ArticlesCollection = "articles";
+        private const string ImagesCollections = "images";
+        private const string VideosCollection = "videos";
+
+        private readonly IMongoDatabase _database;
+        
         private readonly IMongoCollection<StoredArticle> _articlesCollection;
         private readonly GridFSBucket _images;
         private readonly GridFSBucket _videos;
@@ -25,16 +32,18 @@ namespace Mememe.Service.Database
             string connectionString = BuildConnectionString(configuration);
 
             var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(configuration.Database);
+            _database = client.GetDatabase(configuration.Database);
 
-            database.CreateCollection("articles");
-            _articlesCollection = database.GetCollection<StoredArticle>("articles");
+            if (!IsCollectionExistsInDatabase(ArticlesCollection))
+                _database.CreateCollection(ArticlesCollection);
+            
+            _articlesCollection = _database.GetCollection<StoredArticle>(ArticlesCollection);
 
-            var imagesOptions = new GridFSBucketOptions { BucketName = "images" };
-            var videosOptions = new GridFSBucketOptions { BucketName = "videos" };
+            var imagesOptions = new GridFSBucketOptions { BucketName = ImagesCollections };
+            var videosOptions = new GridFSBucketOptions { BucketName = VideosCollection };
 
-            _images = new GridFSBucket(database, imagesOptions);
-            _videos = new GridFSBucket(database, videosOptions);
+            _images = new GridFSBucket(_database, imagesOptions);
+            _videos = new GridFSBucket(_database, videosOptions);
         }
 
         public async Task<bool> UploadArticle(Article article)
@@ -80,6 +89,17 @@ namespace Mememe.Service.Database
                .Append(configuration.AuthMechanism);
 
             return builder.ToString();
+        }
+
+        private bool IsCollectionExistsInDatabase(string collection)
+        {
+            var collectionList = _database.ListCollectionNames();
+            
+            while (collectionList.MoveNext())
+                if (collectionList.Current.Contains(collection))
+                    return true;
+
+            return false;
         }
 
         private async Task<ObjectId> UploadImage(string title, string link)
