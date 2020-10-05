@@ -43,6 +43,9 @@ namespace Mememe.Service.Services
 
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
+            WebDriver.Start(_parserConfiguration);
+            Log.Debug("Started web-driver");
+            
             _triggerTimer.Start();
             Trigger();
 
@@ -59,7 +62,7 @@ namespace Mememe.Service.Services
         public override void Dispose()
         {
             WebDriver.Stop();
-            Log.Debug("Stopped web-driver due to service stop");
+            Log.Debug("Stopped web-driver");
             
             _triggerTimer.Dispose();
 
@@ -92,9 +95,6 @@ namespace Mememe.Service.Services
 
         private IEnumerable<Article?> Parse()
         {
-            WebDriver.Start(_parserConfiguration);
-            Log.Debug("Started web-driver");
-
             MainPageScenarios.OpenFreshSection();
 
             for (var i = 0; i < _applicationConfiguration.ContentAmount; i++)
@@ -127,9 +127,6 @@ namespace Mememe.Service.Services
 
                 yield return article;
             }
-
-            WebDriver.Stop();
-            Log.Debug("Stopped web-driver");
         }
 
         private async Task Upload(Article article)
