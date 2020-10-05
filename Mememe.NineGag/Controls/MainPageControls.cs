@@ -1,22 +1,30 @@
 ﻿using Mememe.Parser;
 
-namespace Mememe.NineGag.Controls.MainPage
+namespace Mememe.NineGag.Controls
 {
     public class MainPageControls
     {
         public MainPageControls()
         {
-            MainPageForm = new Control("section#list-view-2");
+            HotLink = new Control("[href=\"/hot\"]");
+            TrendingLink = new Control("[href=\"/trending\"]");
+            FreshLink = new Control("[href=\"/fresh\"]");
 
-            ArticleForm = new Control("article[id]", parent: MainPageForm);
+            ArticlesSectionForm = new Control("section#list-view-2");
+
+            ArticleForm = new Control("article[id]", parent: ArticlesSectionForm);
         }
 
-        public Control MainPageForm { get; }
+        public Control HotLink { get; }
+        public Control TrendingLink { get; }
+        public Control FreshLink { get; }
+
+        public Control ArticlesSectionForm { get; }
 
         public Control ArticleForm { get; }
 
         public Control GetArticleByIndex(int index) =>
-            new Control($"(//article[@id])[{index + 1}]", SelectorType.Xpath, MainPageForm);
+            new Control($"(//article[@id])[{index + 1}]", SelectorType.Xpath, ArticlesSectionForm);
 
         public Control GetArticleTitle(Control article) => new Control("h1", parent: article);
 

@@ -1,12 +1,26 @@
 ﻿using Mememe.NineGag.Controls;
-using Mememe.NineGag.Controls.MainPage;
 using Mememe.Parser;
 
-namespace Mememe.NineGag.Scenarios.MainPage
+namespace Mememe.NineGag.Scenarios
 {
     public static class MainPageScenarios
     {
         private static readonly MainPageControls Controls = ControlsRepository.MainPageControls;
+
+        public static void OpenHotSection()
+        {
+            WebDriver.Click(Controls.HotLink);
+        }
+
+        public static void OpenTrendingSection()
+        {
+            WebDriver.Click(Controls.TrendingLink);
+        }
+
+        public static void OpenFreshSection()
+        {
+            WebDriver.Click(Controls.FreshLink);
+        }
 
         public static string GetTitle(int articleIndex)
         {

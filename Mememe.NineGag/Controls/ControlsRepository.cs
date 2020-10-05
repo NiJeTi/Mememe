@@ -1,6 +1,4 @@
-﻿using Mememe.NineGag.Controls.MainPage;
-
-namespace Mememe.NineGag.Controls
+﻿namespace Mememe.NineGag.Controls
 {
     public static class ControlsRepository
     {
