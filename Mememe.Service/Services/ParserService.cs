@@ -5,8 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mememe.NineGag.Models;
-using Mememe.NineGag.Scenarios.MainPage;
+using Mememe.NineGag.Scenarios;
 using Mememe.Parser;
+using Mememe.Parser.Configurations;
 using Mememe.Parser.Exceptions;
 using Mememe.Service.Configurations;
 using Mememe.Service.Database;
@@ -21,20 +22,20 @@ namespace Mememe.Service.Services
 {
     public class ParserService : BackgroundService
     {
-        private readonly IMongo _mongo;
+        private readonly IDatabase _database;
 
         private readonly ApplicationConfiguration _applicationConfiguration;
-        private readonly WebDriver.Configuration _parsingConfiguration;
+        private readonly WebDriverConfiguration _parserConfiguration;
 
         private readonly Timer _triggerTimer;
 
-        public ParserService(IMongo mongo,
-            ApplicationConfiguration applicationConfiguration, WebDriver.Configuration parsingConfiguration)
+        public ParserService(IDatabase database,
+            ApplicationConfiguration applicationConfiguration, WebDriverConfiguration parserConfiguration)
         {
-            _mongo = mongo;
+            _database = database;
 
             _applicationConfiguration = applicationConfiguration;
-            _parsingConfiguration = parsingConfiguration;
+            _parserConfiguration = parserConfiguration;
 
             _triggerTimer = new Timer(applicationConfiguration.RepeatEvery.TotalMilliseconds);
             _triggerTimer.Elapsed += (_, __) => Trigger();
@@ -57,10 +58,10 @@ namespace Mememe.Service.Services
 
         public override void Dispose()
         {
+            WebDriver.Stop();
+            Log.Debug("Stopped web-driver due to service stop");
+            
             _triggerTimer.Dispose();
-
-            if (WebDriver.IsReady)
-                WebDriver.Dispose();
 
             base.Dispose();
         }
@@ -69,30 +70,32 @@ namespace Mememe.Service.Services
 
         private void Trigger()
         {
-            int contentAmount = _applicationConfiguration.ContentAmount;
+            int expectedAmount = _applicationConfiguration.ContentAmount;
 
-            Log.Information($"Triggered parsing of {contentAmount} articles");
+            Log.Information($"Triggered parsing of {expectedAmount} articles");
 
-            var uploadTasks = Parse().Where(a => a != null).Select(Upload!).ToArray();
+            var uploadTasks = Parse()
+               .Where(a => a != null)
+               .Select(Upload!).ToArray();
+
             Task.WaitAll(uploadTasks);
 
-            int parsedContentAmount = uploadTasks.Length;
+            int actualAmount = uploadTasks.Length;
 
-            if (parsedContentAmount > contentAmount / 2)
-                Log.Information($"{parsedContentAmount} articles were parsed and uploaded");
-            else if (parsedContentAmount <= contentAmount / 2)
-                Log.Warning($"Only {parsedContentAmount} articles were parsed and uploaded");
-            else if (parsedContentAmount == 0)
-                Log.Error("No articles were parsed and uploaded");
+            if (actualAmount > expectedAmount / 2)
+                Log.Information($"{actualAmount} articles has been successfully processed");
+            else if (actualAmount <= expectedAmount / 2)
+                Log.Warning($"Only {actualAmount} articles has been successfully processed");
+            else if (actualAmount == 0)
+                Log.Error("No articles has been successfully processed");
         }
 
         private IEnumerable<Article?> Parse()
         {
-            if (!WebDriver.IsReady)
-            {
-                WebDriver.Initialize(_parsingConfiguration);
-                Log.Debug("Initialized web-driver");
-            }
+            WebDriver.Start(_parserConfiguration);
+            Log.Debug("Started web-driver");
+
+            MainPageScenarios.OpenFreshSection();
 
             for (var i = 0; i < _applicationConfiguration.ContentAmount; i++)
             {
@@ -110,13 +113,13 @@ namespace Mememe.Service.Services
                         Video = MainPageScenarios.GetVideo(i)
                     };
 
-                    Log.Debug($"Parsed article {i + 1} (\"{title}\")");
+                    Log.Debug($"Article {i + 1} (\"{article}\") has been parsed");
                 }
                 catch (ControlDoesntExistException exception)
                 {
                     var logBuilder = new StringBuilder();
 
-                    logBuilder.AppendLine($"Error while parsing article {i + 1}")
+                    logBuilder.AppendLine($"Article {i + 1} hasn't been parsed")
                        .Append(exception);
 
                     Log.Warning(logBuilder.ToString());
@@ -125,20 +128,19 @@ namespace Mememe.Service.Services
                 yield return article;
             }
 
-            if (WebDriver.IsReady)
-            {
-                WebDriver.Dispose();
-                Log.Debug("Disposed web-driver");
-            }
+            WebDriver.Stop();
+            Log.Debug("Stopped web-driver");
         }
 
         private async Task Upload(Article article)
         {
-            Log.Debug($"Began uploading \"{article.Title}\" article");
+            Log.Debug($"Began uploading \"{article}\" article");
 
-            await _mongo.UploadArticle(article);
+            bool result = await _database.UploadArticle(article);
 
-            Log.Debug($"Uploaded \"{article.Title}\" article");
+            Log.Debug(result
+                ? $"Article \"{article}\" has been uploaded"
+                : $"Article \"{article}\" hasn't been uploaded");
         }
     }
 }
