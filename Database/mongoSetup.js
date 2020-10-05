@@ -1,6 +1,6 @@
 db = db.getSiblingDB("nineGag");
 
-db.createCollection("locker");
+db.createCollection("_locker");
 
 db.createUser({
   user: "service",
