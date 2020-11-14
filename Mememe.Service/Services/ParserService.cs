@@ -45,7 +45,7 @@ namespace Mememe.Service.Services
         {
             WebDriver.Start(_parserConfiguration);
             Log.Debug("Started web-driver");
-            
+
             _triggerTimer.Start();
             Trigger();
 
@@ -63,7 +63,7 @@ namespace Mememe.Service.Services
         {
             WebDriver.Stop();
             Log.Debug("Stopped web-driver");
-            
+
             _triggerTimer.Dispose();
 
             base.Dispose();
@@ -73,7 +73,7 @@ namespace Mememe.Service.Services
 
         private void Trigger()
         {
-            int expectedAmount = _applicationConfiguration.ContentAmount;
+            var expectedAmount = _applicationConfiguration.ContentAmount;
 
             Log.Information($"Triggered parsing of {expectedAmount} articles");
 
@@ -83,7 +83,7 @@ namespace Mememe.Service.Services
 
             Task.WaitAll(uploadTasks);
 
-            int actualAmount = uploadTasks.Length;
+            var actualAmount = uploadTasks.Length;
 
             if (actualAmount > expectedAmount / 2)
                 Log.Information($"{actualAmount} articles has been successfully processed");
@@ -133,7 +133,7 @@ namespace Mememe.Service.Services
         {
             Log.Debug($"Began uploading \"{article}\" article");
 
-            bool result = await _database.UploadArticle(article);
+            var result = await _database.UploadArticle(article);
 
             Log.Debug(result
                 ? $"Article \"{article}\" has been uploaded"

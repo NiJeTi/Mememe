@@ -22,7 +22,7 @@ namespace Mememe.Service.Database
         private const string VideosCollection = "videos";
 
         private readonly IMongoDatabase _database;
-        
+
         private readonly IMongoCollection<StoredArticle> _articlesCollection;
         private readonly GridFSBucket _images;
         private readonly GridFSBucket _videos;
@@ -36,7 +36,7 @@ namespace Mememe.Service.Database
 
             if (!IsCollectionExistsInDatabase(ArticlesCollection))
                 _database.CreateCollection(ArticlesCollection);
-            
+
             _articlesCollection = _database.GetCollection<StoredArticle>(ArticlesCollection);
 
             var imagesOptions = new GridFSBucketOptions { BucketName = ImagesCollections };
@@ -94,7 +94,7 @@ namespace Mememe.Service.Database
         private bool IsCollectionExistsInDatabase(string collection)
         {
             var collectionList = _database.ListCollectionNames();
-            
+
             while (collectionList.MoveNext())
                 if (collectionList.Current.Contains(collection))
                     return true;

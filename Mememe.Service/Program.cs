@@ -68,7 +68,7 @@ namespace Mememe.Service
 
                     services
                        .AddHostedService<ParserService>()
-                       .AddSingleton<IDatabase>(provider => new Mongo(provider.GetService<MongoConfiguration>()));
+                       .AddSingleton<IDatabase>(provider => new Mongo(provider.GetService<MongoConfiguration>()!));
                 })
                .Build();
     }
